@@ -60,15 +60,22 @@ class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorke
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        /** Idempotent -- safe to call on every app start; KEEP means an already
-         *  scheduled periodic chain is left alone rather than reset. */
+        /** WorkManager rejects anything shorter for PeriodicWorkRequest. */
+        private const val PERIODIC_INTERVAL_MINUTES = 15L
+
+        /** Idempotent -- safe to call on every app start. UPDATE (not KEEP) so a
+         *  changed interval/constraints here actually reaches installs that
+         *  already have a periodic chain scheduled; WorkManager applies the new
+         *  spec in place and keeps the original lastEnqueueTime, so shrinking the
+         *  interval makes the next run due sooner rather than resetting the
+         *  countdown from now. */
         fun schedulePeriodic(context: Context) {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(6, TimeUnit.HOURS)
+            val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
                 .setConstraints(networkConstraints())
                 .setInputData(Data.Builder().putString(KEY_MODE, "periodic").build())
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniquePeriodicWork(PERIODIC_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+                .enqueueUniquePeriodicWork(PERIODIC_WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
         }
 
         fun triggerManualIncremental(context: Context) = enqueueManual(context, mode = "manual")

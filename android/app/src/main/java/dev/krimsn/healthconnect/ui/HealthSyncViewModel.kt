@@ -110,6 +110,17 @@ class HealthSyncViewModel(application: Application) : AndroidViewModel(applicati
     fun fullRecompute() = SyncWorker.triggerFullRecompute(getApplication())
     fun backfill(months: Long) = SyncWorker.triggerBackfill(getApplication(), months)
 
+    /** Called when the dashboard becomes visible (cold start or return from
+     *  background) so data is as fresh as the last time the user glanced at
+     *  the phone, without waiting for the next periodic run. Reuses the same
+     *  unique work + KEEP dedup as [syncNow], so this is cheap even if the
+     *  user flips back to the app repeatedly. Guarded on permissions so a
+     *  fresh install doesn't log a spurious error entry before the user has
+     *  granted anything. */
+    fun syncOnAppVisible() {
+        if (permissionsGranted.value) syncNow()
+    }
+
     fun clearHistory() {
         viewModelScope.launch { historyStore.clear() }
     }
