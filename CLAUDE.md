@@ -30,9 +30,14 @@ Mi Band 8 Pro / Mi Scale 2 → Gadgetbridge → Health Connect (на телеф�
 
 Два независимых секрета, ни один не в репозитории:
 
-- Телефон использует **publishable**-ключ Supabase. RLS даёт роли `anon` только
-  `insert`/`update` на `health_records` и `sync_runs`, `select` отозван — утёкший из APK
-  ключ не читает данные.
+- Телефон использует **publishable**-ключ Supabase. RLS даёт роли `anon` `select`,
+  `insert`, `update` на `health_records` и `sync_runs`. `select` — вынужденная уступка:
+  PostgREST-upsert (`Prefer: resolution=merge-duplicates`) компилируется в
+  `INSERT ... ON CONFLICT DO UPDATE`, а этой команде Postgres требует `SELECT` и сверяет
+  обновляемые строки с RLS-политикой `SELECT` (это поведение самого Postgres, закрывает
+  CVE-2017-15099, не особенность PostgREST) — write-only роль для upsert невозможна в
+  принципе. Утёкший из APK ключ может читать данные о здоровье, не только писать; это
+  принятый компромисс для личного сайдлоад-приложения, а не недосмотр.
 - MCP использует отдельную Postgres-роль `health_reader` (только `select`,
   `statement_timeout`). Строка подключения — в `mcp/.env`, не в репозитории.
 

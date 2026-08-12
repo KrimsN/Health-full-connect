@@ -21,8 +21,13 @@ private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
 /**
  * Talks to Supabase's PostgREST endpoint using the publishable key. That key is
- * granted insert/update only on health_records and sync_runs (see
- * db/003_roles_rls.sql) -- a leaked key can spam rows but never read them back.
+ * granted select/insert/update on health_records and sync_runs (see
+ * db/003_roles_rls.sql) -- select is a forced tradeoff, not a convenience: the
+ * upsert below compiles to `INSERT ... ON CONFLICT DO UPDATE`, which Postgres
+ * itself requires SELECT privilege for and checks against SELECT RLS policies
+ * (core Postgres behavior, not a PostgREST quirk -- see CVE-2017-15099). A
+ * write-only role cannot upsert. A leaked key can therefore read health data
+ * back, not just write it.
  *
  * Deliberately just the `apikey` header, not `Authorization: Bearer`. Supabase's
  * new non-JWT publishable/secret keys are explicitly documented as rejected by

@@ -35,15 +35,19 @@ sdkmanager --sdk_root=<sdk> --licenses
    `REPLACE_WITH_STRONG_PASSWORD` на сгенерированный пароль для роли
    `health_reader`. Пароль нигде не коммитится — он понадобится только на
    шаге 5 (MCP), в `mcp/.env`.
-4. Включить пулинг для роли `health_reader`: **Database → Roles →
-   health_reader → Connection pooling → Enable**. Без этого Supavisor не
-   примет имя пользователя `health_reader.<project-ref>` на шаге 5.
-5. Найти в **Project Settings → API**:
+4. Найти в **Project Settings → API**:
    - `Project URL` (вида `https://xxxx.supabase.co`),
    - `publishable key` (новый формат ключей, `sb_publishable_...`).
-   Найти в **Project Settings → Database → Connection pooling**
-   session-pooler connection string (порт `5432`, режим *session*, не
-   *transaction* — нужен именно session для нашего использования).
+5. Взять хост пулера через кнопку **Connect** (вверху дашборда) → вкладка
+   **Direct connection string** → режим **Session pooler** (не *Transaction*
+   — нужен именно session, он не сбрасывает `SET` внутри сессии, которым
+   MCP выставляет `statement_timeout`). Скопировать хост оттуда буквально —
+   вида `aws-N-<region>.pooler.supabase.com`, где `N` — номер шарда,
+   индивидуальный для проекта (не обязательно `0`). Неверный номер шарда
+   даёт ошибку Supavisor `tenant/user ... not found`, которая выглядит как
+   проблема с ролью или паролем, а на деле — просто не тот хост.
+   Итоговая строка для `mcp/.env`:
+   `postgresql://health_reader.<project-ref>:<пароль>@<хост из Connect>:5432/postgres`.
 
 Проверка (замените плейсхолдеры):
 
@@ -55,9 +59,11 @@ curl -X POST 'https://<PROJECT_REF>.supabase.co/rest/v1/health_records?on_confli
   -d '[{"record_type":"Test","hc_record_id":"probe-1","start_time":"2026-01-01T00:00:00Z","value":{}}]'
 ```
 
-Ожидается `201`/`204`. Тот же ключ на `GET .../health_records` должен
-получить отказ (`select` не выдан). Удалить тестовую строку не обязательно —
-`record_type = 'Test'` не пересекается ни с одним view.
+Ожидается `201`/`204`. Тот же ключ на `GET .../health_records` тоже отработает —
+`anon` умышленно получает `select` (см. врезку в `db/003_roles_rls.sql`: без него
+не работает upsert, которым пишет телефон). Удалить тестовую строку не обязательно —
+`record_type = 'Test'` не пересекается ни с одним view, но если мешает —
+`delete from health_records where record_type = 'Test';` в SQL Editor.
 
 ## 3. Gadgetbridge
 
@@ -141,9 +147,12 @@ claude mcp add --transport http --scope user health http://127.0.0.1:8933/mcp
   Health Connect, само с браслетом не общается.
 - **Ошибка авторизации при апсерте с телефона.** Обычно неверный
   `publishableKey` в `local.properties` или не применён `003_roles_rls.sql`.
-- **MCP не подключается к БД.** Проверьте, что для `health_reader` включён
-  Connection pooling (шаг 2.4) и что в строке подключения используется
-  формат `health_reader.<project-ref>`, а не просто `health_reader`.
+- **MCP не подключается к БД, ошибка `tenant/user ... not found`.** Это не про
+  права роли — Supavisor не нашёл указанный pooler-хост для этого проекта.
+  Проверьте: (1) в строке подключения формат `health_reader.<project-ref>`,
+  а не просто `health_reader`; (2) хост скопирован буквально из **Connect →
+  Direct connection string → Session pooler** в дашборде, а не собран вручную
+  по шаблону — номер шарда (`aws-N-...`) индивидуален для проекта.
 - **Фоновый синк не срабатывает.** `adb shell cmd jobscheduler run -f
   dev.krimsn.healthconnect <jobId>` форсирует ближайшую задачу WorkManager;
   `adb logcat -s HealthSync` покажет, что происходит.
