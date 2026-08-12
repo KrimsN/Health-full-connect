@@ -1,0 +1,9 @@
+# Copy to local.properties (gitignored) and fill in real values.
+# sdk.dir is written automatically by Gradle/Studio on first build if omitted here.
+sdk.dir=E\:\\android-sdk
+
+# Supabase project -- REST endpoint and publishable key. The publishable key is
+# safe to ship inside the APK: RLS grants it insert/update only, no select
+# (see db/003_roles_rls.sql).
+supabase.url=https://YOUR_PROJECT_REF.supabase.co
+supabase.publishableKey=sb_publishable_xxxxxxxxxxxxxxxxxxxxxxxx

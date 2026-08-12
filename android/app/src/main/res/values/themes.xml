@@ -1,0 +1,7 @@
+<resources>
+    <!-- Only the window background before Compose takes over; all real theming
+         (colors, typography, dark mode) is Material3 in MainActivity's Compose
+         tree. Parented on the platform theme, not Material Components, since the
+         app has no androidx.appcompat/material dependency. -->
+    <style name="Theme.HealthFullConnect" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

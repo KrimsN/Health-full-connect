@@ -1,0 +1,37 @@
+# Android / Gradle
+android/local.properties
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/captures/
+android/.cxx/
+*.keystore
+*.jks
+!debug.keystore
+
+# Android Studio (не используется в этом проекте, но на случай открытия)
+android/.idea/
+android/*.iml
+
+# Android SDK / toolchain (устанавливается локально, не версионируется)
+/android-sdk/
+
+# Python / MCP
+mcp/.venv/
+mcp/.env
+**/__pycache__/
+*.pyc
+mcp/.pytest_cache/
+mcp/.ruff_cache/
+
+# Секреты и локальные конфиги
+.env
+*.env.local
+
+# Claude Code / IDE
+.claude/settings.local.json
+.vscode/
+
+# ОС
+Thumbs.db
+.DS_Store

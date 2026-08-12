@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain vector icon, not an adaptive icon: minSdk 28 rasterizes vectors for
+     the launcher at build time, so no separate mipmap PNGs are needed. A simple
+     pulse line on a solid background is enough for a sideloaded personal app. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#1B5E20" />
+
+    <path
+        android:pathData="M20,58 L38,58 L46,38 L58,78 L68,50 L76,58 L88,58"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+</vector>

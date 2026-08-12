@@ -1,0 +1,14 @@
+services:
+  health-mcp:
+    build: .
+    image: health-mcp:local
+    restart: unless-stopped
+    ports:
+      # Bound to loopback only -- this server has no auth of its own, it
+      # relies entirely on not being reachable from outside the machine.
+      - "127.0.0.1:8933:8933"
+    env_file:
+      - .env
+    environment:
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8933"
