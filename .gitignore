@@ -30,6 +30,7 @@ mcp/.ruff_cache/
 
 # Claude Code / IDE
 .claude/settings.local.json
+.mcp.json
 .vscode/
 
 # ОС
