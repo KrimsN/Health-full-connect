@@ -1,6 +1,7 @@
 package dev.krimsn.healthconnect.ui
 
 import android.app.Application
+import android.os.PowerManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
@@ -25,6 +26,11 @@ data class DashboardUiState(
     val lastRun: SyncRun? = null,
     val freshnessByType: Map<String, Instant> = emptyMap(),
     val syncRunning: Boolean = false,
+    /** False means the OS may throttle the periodic WorkManager job (see
+     *  DashboardScreen's exemption card) well past its configured interval --
+     *  most visible on OEMs (Samsung, Xiaomi) that demote rarely-opened apps
+     *  to the RARE app standby bucket. */
+    val batteryOptimizationExempt: Boolean = true,
 )
 
 /**
@@ -46,21 +52,26 @@ class HealthSyncViewModel(application: Application) : AndroidViewModel(applicati
     private val permissionsGranted = MutableStateFlow(false)
     private val freshness = MutableStateFlow<Map<String, Instant>>(emptyMap())
     private val syncRunning = MutableStateFlow(false)
+    private val batteryOptimizationExempt = MutableStateFlow(true)
 
     val uiState: StateFlow<DashboardUiState> =
-        combine(history, permissionsGranted, freshness, syncRunning) { runs, granted, fresh, running ->
+        combine(
+            history, permissionsGranted, freshness, syncRunning, batteryOptimizationExempt,
+        ) { runs, granted, fresh, running, batteryExempt ->
             DashboardUiState(
                 permissionsGranted = granted,
                 healthConnectAvailable = healthConnect.isAvailable(),
                 lastRun = runs.firstOrNull(),
                 freshnessByType = fresh,
                 syncRunning = running,
+                batteryOptimizationExempt = batteryExempt,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 
     init {
         refreshPermissions()
         refreshFreshness()
+        refreshBatteryOptimizationStatus()
         observeWork()
     }
 
@@ -70,6 +81,12 @@ class HealthSyncViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             permissionsGranted.value = healthConnect.isAvailable() && healthConnect.hasAllPermissions()
         }
+    }
+
+    fun refreshBatteryOptimizationStatus() {
+        val app = getApplication<Application>()
+        val powerManager = app.getSystemService(PowerManager::class.java)
+        batteryOptimizationExempt.value = powerManager.isIgnoringBatteryOptimizations(app.packageName)
     }
 
     private fun refreshFreshness() {

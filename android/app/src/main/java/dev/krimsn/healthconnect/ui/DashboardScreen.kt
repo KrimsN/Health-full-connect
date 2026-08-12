@@ -1,6 +1,10 @@
 package dev.krimsn.healthconnect.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
 import dev.krimsn.healthconnect.sync.SyncOutcome
@@ -41,11 +46,18 @@ private val TIME_FORMAT: DateTimeFormatter =
 @Composable
 fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract(),
     ) {
         viewModel.refreshPermissions()
+    }
+
+    val batteryOptimizationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) {
+        viewModel.refreshBatteryOptimizationStatus()
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Health Sync") }) }) { padding ->
@@ -81,6 +93,30 @@ fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
                         Spacer(Modifier.height(8.dp))
                         Button(onClick = { permissionLauncher.launch(viewModel.requiredPermissions()) }) {
                             Text("Grant permissions")
+                        }
+                    }
+                }
+            }
+
+            if (!state.batteryOptimizationExempt) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Background sync may be delayed", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "This phone's battery manager can throttle the periodic sync job well " +
+                                "past its normal schedule. Exempting the app keeps it reliable.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = {
+                            val intent = Intent(
+                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                Uri.parse("package:${context.packageName}"),
+                            )
+                            batteryOptimizationLauncher.launch(intent)
+                        }) {
+                            Text("Exempt from battery optimization")
                         }
                     }
                 }

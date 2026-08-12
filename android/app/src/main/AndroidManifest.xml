@@ -37,6 +37,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Lets the dashboard offer an opt-in exemption from OEM battery
+         management (Samsung/Xiaomi etc. demote rarely-opened apps to the
+         RARE app standby bucket, which throttles the periodic WorkManager
+         job well past its 6h interval). Not a Play Store restricted
+         permission concern; this app isn't distributed there. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Required so the app can detect whether the Health Connect provider app
          is installed (Android 13 and below ship it as a separate Play Store app). -->
     <queries>
