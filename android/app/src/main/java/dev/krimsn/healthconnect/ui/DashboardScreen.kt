@@ -42,6 +42,9 @@ import java.time.format.DateTimeFormatter
 private val TIME_FORMAT: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
 
+private const val ACTION_HEALTH_CONNECT_SETTINGS = "android.health.connect.action.HEALTH_HOME_SETTINGS"
+private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
@@ -65,22 +68,22 @@ fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(12.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!state.healthConnectAvailable) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         "Health Connect isn't available on this device. Install or update " +
                             "it from the Play Store, then reopen this app.",
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(12.dp),
                     )
                 }
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = if (state.permissionsGranted) {
                             "Health Connect permissions granted"
@@ -94,13 +97,30 @@ fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
                         Button(onClick = { permissionLauncher.launch(viewModel.requiredPermissions()) }) {
                             Text("Grant permissions")
                         }
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                try {
+                                    context.startActivity(Intent(ACTION_HEALTH_CONNECT_SETTINGS))
+                                } catch (e: android.content.ActivityNotFoundException) {
+                                    context.startActivity(
+                                        Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("market://details?id=$HEALTH_CONNECT_PACKAGE"),
+                                        ),
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Open Health Connect") }
                     }
                 }
             }
 
             if (!state.batteryOptimizationExempt) {
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Text("Background sync may be delayed", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -123,7 +143,7 @@ fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text("Last run", style = MaterialTheme.typography.titleMedium)
                     val last = state.lastRun
                     if (last == null) {
@@ -143,13 +163,13 @@ fun DashboardScreen(viewModel: HealthSyncViewModel, onOpenHistory: () -> Unit) {
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text("Freshness by type", style = MaterialTheme.typography.titleMedium)
                     if (state.freshnessByType.isEmpty()) {
                         Text("No data synced yet")
                     } else {
                         val sorted = state.freshnessByType.entries.sortedByDescending { it.value }
-                        LazyColumn(modifier = Modifier.height(180.dp)) {
+                        LazyColumn(modifier = Modifier.height(96.dp)) {
                             items(sorted) { entry ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
