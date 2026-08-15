@@ -74,6 +74,7 @@ grant usage on schema public to health_reader;
 grant select on public.health_records to health_reader;
 grant select on public.sync_runs to health_reader;
 grant select on
+  public.v_health_records_clean,
   public.v_weight,
   public.v_body_composition,
   public.v_steps_daily,
@@ -97,6 +98,7 @@ create policy health_reader_select_sync_runs on public.sync_runs
 -- anon has no reason to touch any view directly (it only ever talks to the
 -- base tables); the default-privileges issue above applies here too.
 revoke all on
+  public.v_health_records_clean,
   public.v_weight,
   public.v_body_composition,
   public.v_steps_daily,
@@ -111,6 +113,25 @@ revoke all on
 -- otherwise couldn't read them directly. security_invoker makes each view
 -- run as the querying role instead, so the policies above are what actually
 -- governs access even through a view.
+--
+-- IMPORTANT: `create or replace view` in 002_views.sql resets this option
+-- back to its default (off) on every view it touches -- confirmed against
+-- pg_class.reloptions after a live redeploy, not just from the docs. Any
+-- time 002_views.sql is rerun, the ALTER VIEW block below must be rerun
+-- immediately after it, or every view silently starts running as its owner
+-- again and RLS on health_records/sync_runs stops being enforced for
+-- health_reader through the views (the base-table grants above still work
+-- correctly either way -- this only affects access via the views).
+--
+-- v_health_records_clean needs its own grant/revoke/security_invoker below
+-- even though no MCP tool queries it by name: with security_invoker=true,
+-- Postgres checks the querying role's own privileges on every view a query
+-- touches, including ones reached only transitively (e.g. v_weight reading
+-- from v_health_records_clean runs as health_reader, so health_reader needs
+-- SELECT on v_health_records_clean directly, not just on v_weight). Skipping
+-- this grant would fail with "permission denied for view
+-- v_health_records_clean" the first time any typed view below is queried.
+alter view public.v_health_records_clean set (security_invoker = true);
 alter view public.v_weight set (security_invoker = true);
 alter view public.v_body_composition set (security_invoker = true);
 alter view public.v_steps_daily set (security_invoker = true);
