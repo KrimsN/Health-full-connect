@@ -14,8 +14,14 @@ Mi Band 8 Pro / Mi Scale 2 → Gadgetbridge → Health Connect (на телеф�
 ## Структура
 
 - `db/` — SQL-схема Supabase: `001_schema.sql` (таблицы), `002_views.sql` (типизированные
-  представления для чтения), `003_roles_rls.sql` (RLS и роль `health_reader`). Применяются
-  вручную через SQL Editor в панели Supabase — миграционного раннера в проекте нет.
+  представления для чтения), `003_roles_rls.sql` (RLS и роль `health_reader`). Файлы в
+  репозитории — шаблоны: `003_roles_rls.sql` содержит плейсхолдер
+  `{{HEALTH_READER_PASSWORD}}` вместо реального пароля. `db/generate-migrations.py`
+  (без внешних зависимостей, работает и на Windows, и на Linux/macOS) подставляет значение
+  из `db/.env` (пример — `db/.env.example`) или переменных окружения
+  и кладёт готовые файлы в гитигнорнутый `db/generated/`. Применяются вручную через
+  SQL Editor в панели Supabase — раннера, который сам подключается к базе и исполняет
+  файлы, в проекте нет.
 - `android/` — Kotlin 2.4.10 + Jetpack Compose, один модуль `app`. minSdk 28, compileSdk/
   targetSdk 36, AGP 9.3.0, Gradle 9.5. Собирается CLI (`./gradlew`), Android Studio не
   используется. Версии androidx (`core-ktx`, `lifecycle-*`) намеренно не самые свежие —

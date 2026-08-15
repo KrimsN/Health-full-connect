@@ -28,13 +28,26 @@ sdkmanager --sdk_root=<sdk> --licenses
 ## 2. Supabase
 
 1. Создать проект на [supabase.com](https://supabase.com) (free tier).
-2. В SQL Editor выполнить по очереди `db/001_schema.sql`, `db/002_views.sql`,
-   `db/003_roles_rls.sql` — именно в этом порядке, `003` ссылается на
-   таблицы и view из первых двух файлов.
-3. В `003_roles_rls.sql` перед запуском заменить
-   `REPLACE_WITH_STRONG_PASSWORD` на сгенерированный пароль для роли
-   `health_reader`. Пароль нигде не коммитится — он понадобится только на
-   шаге 5 (MCP), в `mcp/.env`.
+2. Сгенерировать пароль для роли `health_reader` и подготовить файлы к
+   применению:
+   ```bash
+   cd db
+   cp .env.example .env
+   ```
+   В `db/.env` вписать `HEALTH_READER_PASSWORD` (сгенерировать, например,
+   `openssl rand -base64 24`), затем:
+   ```bash
+   python3 generate-migrations.py
+   ```
+   (На Windows без `python3` в PATH — `python generate-migrations.py`.)
+   Скрипт подставляет пароль в шаблон `003_roles_rls.sql` (в репозитории он
+   содержит плейсхолдер `{{HEALTH_READER_PASSWORD}}`, не реальный секрет) и
+   кладёт готовые файлы в `db/generated/` — эта папка в `.gitignore`, ничего
+   оттуда не коммитится. Пароль нигде не коммитится и сам по себе — он
+   понадобится ещё раз на шаге 5 (MCP), в `mcp/.env`.
+3. В SQL Editor выполнить по очереди `db/generated/001_schema.sql`,
+   `db/generated/002_views.sql`, `db/generated/003_roles_rls.sql` — именно
+   в этом порядке, `003` ссылается на таблицы и view из первых двух файлов.
 4. Найти в **Project Settings → API**:
    - `Project URL` (вида `https://xxxx.supabase.co`),
    - `publishable key` (новый формат ключей, `sb_publishable_...`).
@@ -113,7 +126,8 @@ cp .env.example .env
 ```
 
 В `.env` вписать `DATABASE_URL` — session-pooler строку из шага 2 с именем
-пользователя `health_reader.<project-ref>` и паролем роли `health_reader`.
+пользователя `health_reader.<project-ref>` и паролем роли `health_reader`
+(тем же значением, что вписали в `db/.env` на шаге 2).
 
 ```bash
 docker compose up -d --build

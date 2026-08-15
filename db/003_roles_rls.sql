@@ -61,11 +61,15 @@ create policy anon_update_sync_runs on public.sync_runs
 -- anon/authenticated/service_role trio PostgREST uses, so it is reached by
 -- connecting directly to Postgres (via Supavisor), not through the REST API.
 --
--- IMPORTANT: replace the placeholder password below before running this file,
--- then never commit the real value -- it belongs only in mcp/.env. See
--- docs/SETUP.md for how to enable this role for Supavisor connection pooling
--- (Dashboard -> Database -> Roles -> health_reader -> "Connection pooling").
-create role health_reader with login password 'REPLACE_WITH_STRONG_PASSWORD' nosuperuser noinherit;
+-- {{HEALTH_READER_PASSWORD}} below is a template placeholder, not literal
+-- SQL to run as-is. Run db/generate-migrations.py (reads db/.env -- see
+-- db/.env.example) to render this file into db/generated/003_roles_rls.sql
+-- with the real password substituted, then apply the generated copy in the
+-- SQL Editor -- never this source file, and never commit the rendered
+-- output (db/generated/ is gitignored). See docs/SETUP.md for how to
+-- enable this role for Supavisor connection pooling (Dashboard -> Database
+-- -> Roles -> health_reader -> "Connection pooling").
+create role health_reader with login password '{{HEALTH_READER_PASSWORD}}' nosuperuser noinherit;
 
 alter role health_reader set statement_timeout = '15s';
 

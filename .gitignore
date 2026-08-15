@@ -28,6 +28,9 @@ mcp/.ruff_cache/
 .env
 *.env.local
 
+# SQL, сгенерированный db/generate-migrations.py из шаблонов с секретами
+db/generated/
+
 # Claude Code / IDE
 .claude/settings.local.json
 .mcp.json
